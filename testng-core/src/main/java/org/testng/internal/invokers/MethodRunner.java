@@ -20,6 +20,7 @@ import org.testng.collections.CollectionUtils;
 import org.testng.collections.Lists;
 import org.testng.internal.ObjectBag;
 import org.testng.internal.Parameters;
+import org.testng.internal.Utils;
 import org.testng.internal.invokers.ITestInvoker.FailureContext;
 import org.testng.internal.invokers.TestMethodArguments.Builder;
 import org.testng.internal.thread.Async;
@@ -40,6 +41,7 @@ public class MethodRunner implements IMethodRunner {
     List<ITestResult> result = Lists.newArrayList();
     int parametersIndex = 0;
     Iterable<Object[]> allParameterValues = CollectionUtils.asIterable(allParamValues);
+    Utils.log("Running in sequence " + context);
     for (Object[] next : allParameterValues) {
       if (next == null) {
         // skipped value
@@ -58,12 +60,18 @@ public class MethodRunner implements IMethodRunner {
               .withParameterValues(parameterValues)
               .withParametersIndex(parametersIndex)
               .build();
+      Utils.log("Temp args " + tmArguments);
       try {
+        Utils.log("Invoking " + tmArguments);
         ITestResult tmpResult =
             testInvoker.invokeTestMethod(tmArguments, context.getSuite().getXmlSuite(), failure);
+        Utils.log("Done invoking " + tmArguments);
         tmpResults.add(tmpResult);
         tmpResultsIndex++;
+      } catch (Exception e) {
+        Utils.log("Error invoking " + tmArguments + " exception " + e);
       } finally {
+        Utils.log("We are in finally block");
         boolean lastSuccess = false;
         if (tmpResultsIndex >= 0) {
           lastSuccess = (tmpResults.get(tmpResultsIndex).getStatus() == ITestResult.SUCCESS);
@@ -71,6 +79,7 @@ public class MethodRunner implements IMethodRunner {
         if (failure.instances.isEmpty() || lastSuccess) {
           result.addAll(tmpResults);
         } else {
+          Utils.log("Dont thing about retry...");
           List<ITestResult> retryResults = Lists.newArrayList();
           failure =
               testInvoker.retryFailed(tmArguments, retryResults, failure.count.get(), context);
@@ -81,14 +90,19 @@ public class MethodRunner implements IMethodRunner {
         // other invocationCounts
         if (failure.count.get() > 0
             && (skipFailedInvocationCounts
-                || tmArguments.getTestMethod().skipFailedInvocations())) {
+            || tmArguments.getTestMethod().skipFailedInvocations())) {
+          Utils.log("Skipping invocation for " + tmArguments);
           while (invocationCount.getAndDecrement() > 0) {
+            Utils.log("Are we stuck here?");
             ITestResult r =
                 testInvoker.registerSkippedTestResult(
                     tmArguments.getTestMethod(), System.currentTimeMillis(), null);
+            Utils.log("Maybe not...");
             result.add(r);
             InvokedMethod invokedMethod = new InvokedMethod(System.currentTimeMillis(), r);
+            Utils.log("Invoking listeners for skipped test results " + invokedMethod + " listener " + r);
             testInvoker.invokeListenersForSkippedTestResult(r, invokedMethod);
+            Utils.log("Done invoking listeners for skipped test results " + invokedMethod);
           }
         }
       } // end finally
@@ -111,7 +125,9 @@ public class MethodRunner implements IMethodRunner {
     ObjectBag objectBag = ObjectBag.getInstance(context.getSuite());
     boolean reUse = suite.isShareThreadPoolForDataProviders() || suite.useGlobalThreadPool();
 
+    Utils.log("Getting exec service");
     ExecutorService service = getOrCreate(reUse, suite, objectBag);
+    Utils.log("Exec service is " + service);
     List<CompletableFuture<List<ITestResult>>> all = new ArrayList<>();
     for (Object[] next : CollectionUtils.asIterable(allParamValues)) {
       if (next == null) {
@@ -140,7 +156,10 @@ public class MethodRunner implements IMethodRunner {
               invocationCount.get(),
               failure.count.get(),
               testInvoker.getNotifier());
+      Utils.log("Test method with data provider " + w);
+      Utils.log("Run async " + w + " service " + service);
       all.add(Async.run(w, service));
+      Utils.log("Done Run async " + w + " service " + service);
       // testng387: increment the param index in the bag.
       parametersIndex += 1;
     }
@@ -150,6 +169,8 @@ public class MethodRunner implements IMethodRunner {
 
     // Now start processing the results of each of the CompletableFutures as and when they
     // become available
+    Utils.log("Now start processing the results of each of the CompletableFutures as and when " +
+            "they become available");
     List<ITestResult> result =
         combined
             .thenApply(
@@ -159,8 +180,12 @@ public class MethodRunner implements IMethodRunner {
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList()))
             .join();
+    Utils.log("Done processing the results of each of the CompletableFutures as and when they " +
+            "become available");
     if (!reUse) {
+      Utils.log("Shutting down the service " + service);
       service.shutdown();
+      Utils.log("Service is shut down " + service);
     }
     return result;
   }

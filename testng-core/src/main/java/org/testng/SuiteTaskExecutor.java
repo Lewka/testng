@@ -48,7 +48,9 @@ class SuiteTaskExecutor {
                 queue,
                 new TestNGThreadFactory(name));
     GraphOrchestrator<ISuite> executor = new GraphOrchestrator<>(service, factory, graph, null);
+    Utils.log("Starting " + name);
     executor.run();
+    Utils.log("Finished " + name);
   }
 
   public void awaitCompletion() {
@@ -57,6 +59,7 @@ class SuiteTaskExecutor {
       boolean ignored = service.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
       service.shutdownNow();
     } catch (InterruptedException handled) {
+      Utils.log("Interrupted while waiting for executor to finish " + handled.getMessage());
       Thread.currentThread().interrupt();
       LOGGER.error(handled.getMessage(), handled);
     }

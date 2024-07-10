@@ -242,11 +242,14 @@ public class SuiteRunner implements ISuite, ISuiteRunnerListener {
         sl.onStart(this);
       }
     } else {
+      Utils.log("Suite finish");
       List<ISuiteListener> suiteListenersReversed =
           ListenerOrderDeterminer.reversedOrder(
               listeners.values(), this.configuration.getListenerComparator());
       for (ISuiteListener sl : suiteListenersReversed) {
+        Utils.log("Invoke suite listener: " + sl);
         sl.onFinish(this);
+        Utils.log("Finish Invoke suite listener: " + sl);
       }
     }
   }
@@ -309,9 +312,16 @@ public class SuiteRunner implements ISuite, ISuiteRunnerListener {
   public void run() {
     invokeListeners(true /* start */);
     try {
+      Utils.log("Private Run start");
       privateRun();
-    } finally {
+      Utils.log("Private Run end");
+    } catch (Exception e) {
+      Utils.log("Private Run EXCEPTION " + e.getMessage());
+    }
+    finally {
+      Utils.log("Before before listeners");
       invokeListeners(false /* stop */);
+      Utils.log("After after listeners");
     }
   }
 
@@ -368,7 +378,10 @@ public class SuiteRunner implements ISuite, ISuiteRunnerListener {
         testsInParallel = !XmlSuite.ParallelMode.NONE.equals(xmlSuite.getParallel());
       }
       if (testsInParallel) {
+        Utils.log("SuiteRunner", 3, "Running " + testRunners.size() + " TestRunners");
+        Utils.log("Tests in parallel");
         runInParallelTestMode();
+        Utils.log("After run in parallel");
       } else {
         runSequentially();
       }
@@ -376,7 +389,9 @@ public class SuiteRunner implements ISuite, ISuiteRunnerListener {
       //
       // Invoke afterSuite methods
       //
+      Utils.log("Invoke afterSuite methods");
       if (!afterSuiteMethods.values().isEmpty()) {
+        Utils.log("Invoke afterSuite methods " + afterSuiteMethods.values().stream().map(ITestNGMethod::getMethodName).collect(Collectors.toList()));
         ConfigMethodArguments arguments =
             new Builder()
                 .usingConfigMethodsAs(afterSuiteMethods.values())
@@ -384,6 +399,7 @@ public class SuiteRunner implements ISuite, ISuiteRunnerListener {
                 .usingParameters(xmlSuite.getAllParameters())
                 .build();
         invoker.getConfigInvoker().invokeConfigurations(arguments);
+        Utils.log("Done invoking afterSuite methods");
       }
     }
   }
@@ -417,12 +433,19 @@ public class SuiteRunner implements ISuite, ISuiteRunnerListener {
   private final AutoCloseableLock suiteResultsLock = new AutoCloseableLock();
 
   private void runTest(TestRunner tr) {
+    Utils.log("Run test in suite runner");
     visualisers.forEach(tr::addListener);
+    Utils.log("Visualisers...");
+    Utils.log("Tr runner: " + tr);
     tr.run();
+    Utils.log("Tr runner finished: " + tr);
 
     ISuiteResult sr = new SuiteResult(xmlSuite, tr);
+    Utils.log("Suite result " + sr);
     try (AutoCloseableLock ignore = suiteResultsLock.lock()) {
+      Utils.log("Suite result2 " + sr);
       suiteResults.put(tr.getName(), sr);
+      Utils.log("Suite result3 " + sr);
     }
   }
 
@@ -439,12 +462,14 @@ public class SuiteRunner implements ISuite, ISuiteRunnerListener {
       tasks.add(new SuiteWorker(tr));
     }
 
+    Utils.log("Run in parallel");
     ThreadUtil.execute(
         configuration,
         "tests",
         tasks,
         xmlSuite.getThreadCount(),
         xmlSuite.getTimeOut(XmlTest.DEFAULT_TIMEOUT_MS));
+    Utils.log("Done run in parallel");
   }
 
   private class SuiteWorker implements Runnable {

@@ -26,4 +26,13 @@ public class ParameterHolder {
     this.origin = origin;
     this.dataProviderHolder = dph;
   }
+
+  @Override
+  public String toString() {
+    return "ParameterHolder{" +
+        "dataProviderHolder=" + dataProviderHolder +
+        ", parameters=" + parameters +
+        ", origin=" + origin +
+        '}';
+  }
 }

@@ -8,6 +8,7 @@ import org.testng.IDynamicGraph;
 import org.testng.collections.Maps;
 import org.testng.internal.AutoCloseableLock;
 import org.testng.internal.RuntimeBehavior;
+import org.testng.internal.Utils;
 import org.testng.log4testng.Logger;
 import org.testng.thread.IThreadWorkerFactory;
 import org.testng.thread.IWorker;
@@ -43,21 +44,32 @@ public class GraphOrchestrator<T> {
       if (comparator != null) {
         freeNodes.sort(comparator);
       }
+      Utils.log("Running graph orchestrator");
       runNodes(freeNodes);
+      Utils.log("Graph orchestrator completed");
     }
   }
 
   private void runNodes(List<T> freeNodes) {
+    Utils.log("Run nodes");
     List<IWorker<T>> workers = factory.createWorkers(freeNodes);
+    Utils.log("Creating workers");
     mapNodeToWorker(workers, freeNodes);
-
+    Utils.log("Done creating workers " + workers + " for " + freeNodes);
     for (IWorker<T> worker : workers) {
+      Utils.log("Running worker " + worker);
       mapNodeToParent(freeNodes);
+      Utils.log("Map worker " + freeNodes);
+      freeNodes.forEach(n -> Utils.log("\n node: " + n));
       setStatus(worker, IDynamicGraph.Status.RUNNING);
+      Utils.log("Running worker#2 ");
       try {
         TestNGFutureTask<T> task = new TestNGFutureTask<>(worker, this::afterExecute);
+        Utils.log("Running task " + task);
         service.execute(task);
+        Utils.log("Finished run of task " + task);
       } catch (Exception ex) {
+        Utils.log("###Exception in runNodes() " + ex.getMessage());
         Logger.getLogger(GraphOrchestrator.class).error(ex.getMessage(), ex);
       }
     }
@@ -74,34 +86,53 @@ public class GraphOrchestrator<T> {
   }
 
   private void afterExecute(IWorker<T> r, Throwable t) {
+    Utils.log("After execute for r=" + r + " t=" + t);
     try (AutoCloseableLock ignore = internalLock.lock()) {
-      setStatus(r, computeStatus(r));
+      Utils.log("Setting status");
+      IDynamicGraph.Status status = computeStatus(r);
+      Utils.log("Status = " + status);
+      setStatus(r, status);
+      Utils.log("After set status");
       if (graph.getNodeCount() == graph.getNodeCountWithStatus(IDynamicGraph.Status.FINISHED)) {
+        Utils.log("Shutting down");
         service.shutdown();
+        Utils.log("Complete shutting down");
       } else {
+        Utils.log("NO!");
         List<T> freeNodes = graph.getFreeNodes();
         if (comparator != null) {
           freeNodes.sort(comparator);
         }
+        Utils.log("Sort free nodes...");
         handleThreadAffinity(freeNodes);
+        Utils.log("Handle thread affinity");
         runNodes(freeNodes);
+        Utils.log("Run nodes " + freeNodes + " completed");
       }
     }
   }
 
   private void handleThreadAffinity(List<T> freeNodes) {
+    Utils.log("Handle thread affinity...");
     if (!RuntimeBehavior.enforceThreadAffinity()) {
+      Utils.log("Not enough thread affinity");
       return;
     }
     for (T node : freeNodes) {
+      Utils.log("Free node " + node);
       T upstreamNode = upstream.get(node);
+      Utils.log("Upstream node " + upstreamNode);
       if (upstreamNode == null) {
+        Utils.log("Upstream node is null");
         continue;
       }
       IWorker<T> w = mapping.get(upstreamNode);
+      Utils.log("Mapping node " + w);
       if (w != null) {
         long threadId = w.getCurrentThreadId();
-        mapping.put(node, new PhoneyWorker<>(threadId));
+        PhoneyWorker<T> value = new PhoneyWorker<>(threadId);
+        Utils.log("Phoney worker " + value);
+        mapping.put(node, value);
       }
     }
   }

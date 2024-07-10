@@ -57,25 +57,37 @@ public class ThreadUtil {
                 new LinkedBlockingQueue<>(),
                 new TestNGThreadFactory(name));
 
+    Utils.log("Are we even here?");
     List<Callable<Object>> callables = Lists.newArrayList();
     for (final Runnable task : tasks) {
       callables.add(
           () -> {
+            Utils.log("Run in thread utils " + task);
             task.run();
+            Utils.log("Done run in thread utils " + task);
             return null;
           });
     }
+    Utils.log("hmmmmmm");
     try {
+      Utils.log("Timeout smth");
       if (timeout != 0) {
+        Utils.log("Timeout is " + timeout);
         pooledExecutor.invokeAll(callables, timeout, TimeUnit.MILLISECONDS);
+        Utils.log("Timeout is2 " + timeout);
       } else {
+        Utils.log("Timeout is 0");
         pooledExecutor.invokeAll(callables);
+        Utils.log("Timeout is 0 [2] ");
       }
     } catch (InterruptedException handled) {
+      Utils.log("Wat? Exception " + handled.getMessage());
       Logger.getLogger(ThreadUtil.class).error(handled.getMessage(), handled);
       Thread.currentThread().interrupt();
     } finally {
+      Utils.log("Shutting down");
       pooledExecutor.shutdown();
+      Utils.log("Pooled executor shutdown");
     }
   }
 

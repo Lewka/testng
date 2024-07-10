@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import org.testng.ITestResult;
+import org.testng.internal.Utils;
 import org.testng.internal.invokers.TestMethodWithDataProviderMethodWorker;
 
 public final class Async {
@@ -32,8 +33,10 @@ public final class Async {
       try {
         if (!result.isDone()) {
           result.complete(worker.call());
+          Utils.log("AsyncTask", 1, "Done running task " + result);
         }
-      } catch (Throwable t) {
+      } catch (Exception t) {
+        Utils.log("Exception in async task " + t);
         result.completeExceptionally(t);
       }
     }

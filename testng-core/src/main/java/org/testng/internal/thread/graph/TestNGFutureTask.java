@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.function.BiConsumer;
+import org.testng.internal.Utils;
 import org.testng.thread.IWorker;
 
 public class TestNGFutureTask<T> extends FutureTask<IWorker<T>> implements IWorker<T> {
@@ -19,6 +20,7 @@ public class TestNGFutureTask<T> extends FutureTask<IWorker<T>> implements IWork
 
   @Override
   public void run() {
+    Utils.log("TestNGFutureTask.run");
     super.run();
   }
 

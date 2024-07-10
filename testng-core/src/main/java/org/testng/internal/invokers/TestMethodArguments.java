@@ -1,5 +1,6 @@
 package org.testng.internal.invokers;
 
+import java.util.Arrays;
 import java.util.Map;
 import org.testng.ITestClass;
 import org.testng.ITestNGMethod;
@@ -131,6 +132,21 @@ public class TestMethodArguments extends MethodArguments {
           beforeMethods,
           afterMethods,
           groupMethods);
+    }
+
+    @Override
+    public String toString() {
+      return "Builder{" +
+          "instance=" + instance +
+          ", tm=" + tm +
+          ", parameterValues=" + Arrays.toString(parameterValues) +
+          ", parametersIndex=" + parametersIndex +
+          ", params=" + params +
+          ", testClass=" + testClass +
+          ", beforeMethods=" + Arrays.toString(beforeMethods) +
+          ", afterMethods=" + Arrays.toString(afterMethods) +
+          ", groupMethods=" + groupMethods +
+          '}';
     }
   }
 }

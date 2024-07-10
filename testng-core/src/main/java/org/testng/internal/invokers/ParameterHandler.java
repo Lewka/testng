@@ -132,5 +132,14 @@ class ParameterHandler {
     boolean isBubbleUpFailures() {
       return bubbleUpFailures;
     }
+
+    @Override
+    public String toString() {
+      return "ParameterBag{" +
+          "parameterHolder=" + parameterHolder +
+          ", errorResult=" + errorResult +
+          ", bubbleUpFailures=" + bubbleUpFailures +
+          '}';
+    }
   }
 }

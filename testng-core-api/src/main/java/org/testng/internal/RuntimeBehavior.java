@@ -144,7 +144,7 @@ public final class RuntimeBehavior {
    * @return default XML suite verbosity level, or 1 if property is missing
    */
   public static int getDefaultVerboseLevel() {
-    return Integer.getInteger(TESTNG_DEFAULT_VERBOSE, 1);
+    return Integer.getInteger(TESTNG_DEFAULT_VERBOSE, 10);
   }
 
   /**

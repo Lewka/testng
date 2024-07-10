@@ -51,7 +51,7 @@ public final class Utils {
 
   // Moved from TestRunner
   // TODO: replace with Logger?
-  private static int m_verbose = 1;
+  private static int m_verbose = 10;
 
   /** Hide constructor for utility class. */
   private Utils() {
@@ -63,7 +63,7 @@ public final class Utils {
   }
 
   public static void setVerbose(int n) {
-    m_verbose = n;
+//    m_verbose = n;
   }
 
   public static void writeUtf8File(
@@ -226,12 +226,12 @@ public final class Utils {
    */
   public static void log(String cls, int level, String msg) {
     // Why this coupling on a static member of getVerbose()?
-    if (getVerbose() >= level) {
+//    if (getVerbose() >= level) {
       if (!cls.isEmpty()) {
         LOG.info("[" + cls + "] " + msg);
       } else {
         LOG.info(msg);
-      }
+//      }
     }
   }
 

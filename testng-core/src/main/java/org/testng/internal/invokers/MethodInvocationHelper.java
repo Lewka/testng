@@ -88,7 +88,9 @@ public class MethodInvocationHelper {
 
   protected static Object invokeMethod(Method thisMethod, Object instance, Object[] parameters)
       throws InvocationTargetException, IllegalAccessException {
+    Utils.log("MethodInvocationHelper", 1,"DOLog#1");
     Utils.checkInstanceOrStatic(instance, thisMethod);
+    Utils.log("MethodInvocationHelper", 1,"DOLog#2");
 
     // TESTNG-326, allow IObjectFactory to load from non-standard classloader
     // If the instance has a different classloader, its class won't match the
@@ -96,30 +98,44 @@ public class MethodInvocationHelper {
     if (instance != null && !thisMethod.getDeclaringClass().isAssignableFrom(instance.getClass())) {
       // for some reason, we can't call this method on this class
       // is it static?
+      Utils.log("MethodInvocationHelper", 1,"DOLog#3");
       boolean isStatic = Modifier.isStatic(thisMethod.getModifiers());
       if (!isStatic) {
+        Utils.log("MethodInvocationHelper", 1,"DOLog#4");
         // not static, so grab a method with the same name and signature in this case
         Class<?> clazz = instance.getClass();
+        Utils.log("MethodInvocationHelper", 1,"DOLog#5");
         try {
+          Utils.log("MethodInvocationHelper", 1,"DOLog#6");
           thisMethod = clazz.getMethod(thisMethod.getName(), thisMethod.getParameterTypes());
+          Utils.log("MethodInvocationHelper", 1,"DOLog#7");
         } catch (Exception e) {
+          Utils.log("MethodInvocationHelper", 1,"DOLog#8");
           // ignore, the method may be private
           boolean found = false;
+          Utils.log("MethodInvocationHelper", 1,"DOLog#9");
           for (; clazz != null; clazz = clazz.getSuperclass()) {
+            Utils.log("MethodInvocationHelper", 1,"DOLog#10");
             try {
+              Utils.log("MethodInvocationHelper", 1,"DOLog#11");
               thisMethod =
                   clazz.getDeclaredMethod(thisMethod.getName(), thisMethod.getParameterTypes());
               found = true;
+              Utils.log("MethodInvocationHelper", 1,"DOLog#12");
               break;
             } catch (Exception e2) {
+              Utils.log("MethodInvocationHelper", 1,"DOLog#13 + " + e2.getMessage());
             }
           }
           if (!found) {
+            Utils.log("MethodInvocationHelper", 1,"DOLog#14");
             // should we assert here? Or just allow it to fail on invocation?
             if (thisMethod.getDeclaringClass().equals(instance.getClass())) {
+              Utils.log("MethodInvocationHelper", 1,"DOLog#15");
               throw new RuntimeException(
                   "Can't invoke method " + thisMethod + ", probably due to classloader mismatch");
             }
+            Utils.log("MethodInvocationHelper", 1,"DOLog#16");
             throw new RuntimeException(
                 "Can't invoke method "
                     + thisMethod
@@ -131,14 +147,21 @@ public class MethodInvocationHelper {
       }
     }
 
+    Utils.log("MethodInvocationHelper", 1,"DOLog#17");
     if (!Modifier.isPublic(thisMethod.getModifiers()) || !canAccess(thisMethod)) {
       try {
+        Utils.log("MethodInvocationHelper", 1,"DOLog#18");
         thisMethod.setAccessible(true);
+        Utils.log("MethodInvocationHelper", 1,"DOLog#19");
       } catch (SecurityException e) {
+        Utils.log("MethodInvocationHelper", 1,"DOLog#20");
         throw new TestNGException(thisMethod.getName() + " must be public", e);
       }
     }
-    return thisMethod.invoke(instance, parameters);
+    Utils.log("MethodInvocationHelper", 1,"DOLog#21 Invoke " + thisMethod.getName());
+    Object invoke = thisMethod.invoke(instance, parameters);
+    Utils.log("MethodInvocationHelper", 1,"DOLog#22 Invoke finished " + thisMethod.getName());
+    return invoke;
   }
 
   @SuppressWarnings("deprecation")

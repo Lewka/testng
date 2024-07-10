@@ -116,6 +116,7 @@ public class TestMethodWorker implements IWorker<ITestNGMethod> {
     if (RuntimeBehavior.enforceThreadAffinity()
         && doesTaskHavePreRequisites()
         && currentThreadId != threadIdToRunOn) {
+      Utils.log("Loop here? Current thread id: " + currentThreadId);
       completed = false;
       return;
     }
@@ -132,9 +133,15 @@ public class TestMethodWorker implements IWorker<ITestNGMethod> {
       // Invoke test method
       try {
         invokeTestMethods(testMethod, testMethod.getInstance());
-      } finally {
+      } catch (Exception e) {
+        Utils.log("Emh? Why? Exception: " + e.getMessage());
+      }
+      finally {
+        Utils.log("Bla1");
         try (KeyAwareAutoCloseableLock.AutoReleasable ignored = lock.lockForObject(key)) {
+          Utils.log("Invoke TestMethod: " + testMethodInstance.getMethod());
           invokeAfterClassMethods(testMethod.getTestClass(), testMethodInstance);
+          Utils.log("After Invoke TestMethod: " + testMethodInstance.getMethod());
         }
       }
     }
@@ -153,8 +160,11 @@ public class TestMethodWorker implements IWorker<ITestNGMethod> {
     List<ITestResult> testResults =
         m_testInvoker.invokeTestMethods(tm, m_groupMethods, instance, m_testContext);
 
+    Utils.log("After invoking test methods: " + testResults);
     if (testResults != null) {
+      Utils.log("After invoking test methods2: " + testResults);
       m_testResults.addAll(testResults);
+      Utils.log("After invoking test methods3: " + testResults);
     }
   }
 

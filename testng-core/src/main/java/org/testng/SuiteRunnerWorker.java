@@ -48,8 +48,11 @@ public class SuiteRunnerWorker implements IWorker<ISuite> {
       Utils.log("TestNG", 0, "Running:\n" + allFiles);
     }
 
+    Utils.log("Getting suite to run");
     SuiteRunner suiteRunner = (SuiteRunner) suiteRunnerMap.get(xmlSuite);
+    Utils.log("Have suite to run");
     suiteRunner.run();
+    Utils.log("Run is finished");
 
     // TODO: this should be handled properly
     //    for (IReporter r : suiteRunner.getReporters()) {

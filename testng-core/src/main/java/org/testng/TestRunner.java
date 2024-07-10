@@ -609,14 +609,24 @@ public class TestRunner
    * methods - Catch exceptions - Collect results - Invoke listeners - etc...
    */
   public void run() {
+    Utils.log("Before run");
     beforeRun();
+    Utils.log("After before run");
 
     try {
       XmlTest test = getTest();
+      Utils.log("Running tests!");
       privateRun(test);
-    } finally {
+      Utils.log("After running tests!");
+    }catch (Exception e){
+      Utils.log("Opa! Exception: " + e);
+    }
+    finally {
+      Utils.log("After run");
       afterRun();
+      Utils.log("After after run");
       forgetHeavyReferencesIfNeeded();
+      Utils.log("Forgetting heavy references...");
     }
   }
 
@@ -679,6 +689,7 @@ public class TestRunner
   private void privateRun(XmlTest xmlTest) {
     boolean parallel = xmlTest.getParallel().isParallel();
 
+    Utils.log("#Step1");
     // Make sure we create a graph based on the intercepted methods, otherwise an interceptor
     // removing methods would cause the graph never to terminate (because it would expect
     // termination from methods that never get invoked).
@@ -693,6 +704,7 @@ public class TestRunner
         });
     IDynamicGraph<ITestNGMethod> graph = reference.get();
 
+    Utils.log("#Step2");
     for (ITestNGMethod each : interceptedOrder) {
       if (each instanceof BaseTestMethod) {
         // We don't want our users to change this vital info. That is why the setter is NOT
@@ -704,6 +716,7 @@ public class TestRunner
       }
     }
 
+    Utils.log("#Step3");
     Collection<IExecutionVisualiser> original =
         sort(this.visualisers, m_configuration.getListenerComparator());
     graph.setVisualisers(Sets.newLinkedHashSet(original));
@@ -716,20 +729,27 @@ public class TestRunner
       if (graph.getNodeCount() <= 0) {
         return;
       }
+      Utils.log("#Step11");
+      BlockingQueue<Runnable> queue = newQueue(needPrioritySort);
+      queue.forEach(q -> Utils.log("Queue member : " + q));
       TestTaskExecutor taskExecutor =
           new TestTaskExecutor(
-              m_configuration, xmlTest, this, newQueue(needPrioritySort), graph, methodComparator);
+              m_configuration, xmlTest, this, queue, graph, methodComparator);
       taskExecutor.execute();
+      Utils.log("#Step12");
       taskExecutor.awaitCompletion();
+      Utils.log("#Step13");
       return;
     }
     List<ITestNGMethod> freeNodes = graph.getFreeNodes();
 
+    Utils.log("#Step4");
     if (graph.getNodeCount() > 0 && freeNodes.isEmpty()) {
       throw new TestNGException("No free nodes found in:" + graph);
     }
 
-    while (!freeNodes.isEmpty()) {
+    while (isFree(freeNodes)) {
+      Utils.log("#Step5");
       if (needPrioritySort) {
         freeNodes.sort(methodComparator);
         // Since this is sequential, let's run one at a time and fetch/sort freeNodes after each
@@ -738,10 +758,20 @@ public class TestRunner
         // another test is dependent upon.
         freeNodes = freeNodes.subList(0, 1);
       }
+      Utils.log("Again))))");
       createWorkers(freeNodes).forEach(Runnable::run);
+      Utils.log("After we create workers and run");
       graph.setStatus(freeNodes, IDynamicGraph.Status.FINISHED);
+      Utils.log("Did set status to finished");
       freeNodes = graph.getFreeNodes();
+      Utils.log("Got free nodes");
     }
+  }
+
+  private static boolean isFree(List<ITestNGMethod> freeNodes) {
+    Utils.log("Are nodes free?");
+    freeNodes.forEach(n -> Utils.log("\n NODE: " + n));
+    return !freeNodes.isEmpty();
   }
 
   /** Apply the method interceptor (if applicable) to the list of methods. */
@@ -799,6 +829,7 @@ public class TestRunner
    */
   @Override
   public List<IWorker<ITestNGMethod>> createWorkers(List<ITestNGMethod> methods) {
+    Utils.log("Create workers for methods " + methods);
     AbstractParallelWorker.Arguments args =
         new AbstractParallelWorker.Arguments.Builder()
             .classMethodMap(this.m_classMethodMap)
@@ -809,6 +840,7 @@ public class TestRunner
             .testContext(this)
             .listeners(this.m_classListeners.values())
             .build();
+    Utils.log("Abstract parallel worker creation " + args);
     List<IWorker<ITestNGMethod>> result =
         AbstractParallelWorker.newWorker(m_xmlTest.getParallel(), m_xmlTest.getGroupByInstances())
             .createWorkers(args);
@@ -1249,5 +1281,55 @@ public class TestRunner
   @Override
   public IInjectorFactory getInjectorFactory() {
     return this.m_injectorFactory;
+  }
+
+  @Override
+  public String toString() {
+    return "TestRunner{" +
+        "comparator=" + comparator +
+        ", m_suite=" + m_suite +
+        ", m_xmlTest=" + m_xmlTest +
+        ", m_testName='" + m_testName + '\'' +
+        ", m_injectorFactory=" + m_injectorFactory +
+        ", m_objectFactory=" + m_objectFactory +
+        ", m_testClassesFromXml=" + m_testClassesFromXml +
+        ", m_invoker=" + m_invoker +
+        ", m_annotationFinder=" + m_annotationFinder +
+        ", m_testListeners=" + m_testListeners +
+        ", m_configurationListeners=" + m_configurationListeners +
+        ", visualisers=" + visualisers +
+        ", m_confListener=" + m_confListener +
+        ", m_classListeners=" + m_classListeners +
+        ", holder=" + holder +
+        ", m_startDate=" + m_startDate +
+        ", m_endDate=" + m_endDate +
+        ", testMethodsContainer=" + testMethodsContainer +
+        ", m_classMap=" + m_classMap +
+        ", m_outputDirectory='" + m_outputDirectory + '\'' +
+        ", m_xmlMethodSelector=" + m_xmlMethodSelector +
+        ", exitCodeListener=" + exitCodeListener +
+        ", m_beforeSuiteMethods=" + Arrays.toString(m_beforeSuiteMethods) +
+        ", m_afterSuiteMethods=" + Arrays.toString(m_afterSuiteMethods) +
+        ", m_beforeXmlTestMethods=" + Arrays.toString(m_beforeXmlTestMethods) +
+        ", m_afterXmlTestMethods=" + Arrays.toString(m_afterXmlTestMethods) +
+        ", m_excludedMethods=" + m_excludedMethods +
+        ", m_groupMethods=" + m_groupMethods +
+        ", m_metaGroups=" + m_metaGroups +
+        ", m_passedTests=" + m_passedTests +
+        ", m_failedTests=" + m_failedTests +
+        ", m_failedButWithinSuccessPercentageTests=" + m_failedButWithinSuccessPercentageTests +
+        ", m_skippedTests=" + m_skippedTests +
+        ", m_runInfo=" + m_runInfo +
+        ", m_host='" + m_host + '\'' +
+        ", m_methodInterceptors=" + m_methodInterceptors +
+        ", m_classMethodMap=" + m_classMethodMap +
+        ", m_testClassFinder=" + m_testClassFinder +
+        ", m_configuration=" + m_configuration +
+        ", m_passedConfigurations=" + m_passedConfigurations +
+        ", m_skippedConfigurations=" + m_skippedConfigurations +
+        ", m_failedConfigurations=" + m_failedConfigurations +
+        ", m_configsToBeInvoked=" + m_configsToBeInvoked +
+        ", m_attributes=" + m_attributes +
+        '}';
   }
 }

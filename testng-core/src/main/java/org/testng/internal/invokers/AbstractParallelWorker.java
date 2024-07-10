@@ -112,5 +112,18 @@ public abstract class AbstractParallelWorker {
         return instance;
       }
     }
+
+    @Override
+    public String toString() {
+      return "Arguments{" +
+          "methods=" + methods +
+          ", invoker=" + invoker +
+          ", configMethods=" + configMethods +
+          ", classMethodMap=" + classMethodMap +
+          ", listeners=" + listeners +
+          ", testContext=" + testContext +
+          ", finder=" + finder +
+          '}';
+    }
   }
 }

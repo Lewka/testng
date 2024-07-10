@@ -66,7 +66,9 @@ class TestTaskExecutor {
     }
     GraphOrchestrator<ITestNGMethod> executor =
         new GraphOrchestrator<>(service, factory, graph, comparator);
+    Utils.log("Executing " + xmlTest.getName());
     executor.run();
+    Utils.log("Finished executing " + xmlTest.getName());
   }
 
   public void awaitCompletion() {
@@ -74,12 +76,18 @@ class TestTaskExecutor {
         String.format(
             "Starting executor test %d with time out: %d milliseconds.", timeOut, timeOut);
     Utils.log("TestTaskExecutor", 2, msg);
+    Utils.log("Timeout iissssss " + timeOut);
     try {
+      Utils.log("Await complete");
       boolean ignored = service.awaitTermination(timeOut, TimeUnit.MILLISECONDS);
+      Utils.log("Await complete2");
       service.shutdownNow();
+      Utils.log("Await complete3");
     } catch (InterruptedException handled) {
+      Utils.log("##Exception e " + handled);
       LOGGER.error(handled.getMessage(), handled);
       Thread.currentThread().interrupt();
+      Utils.log("##Handled exception " + handled);
     }
   }
 }

@@ -11,6 +11,7 @@ import org.testng.ITestNGMethod;
 import org.testng.collections.Lists;
 import org.testng.collections.Sets;
 import org.testng.internal.MethodInstance;
+import org.testng.internal.Utils;
 import org.testng.thread.IWorker;
 import org.testng.xml.XmlSuite;
 import org.testng.xml.XmlTest;
@@ -34,6 +35,7 @@ class ClassBasedParallelWorker extends AbstractParallelWorker {
 
   @Override
   public List<IWorker<ITestNGMethod>> createWorkers(Arguments arguments) {
+    Utils.log("ClassBased",1,"Create class based workers");
     List<IWorker<ITestNGMethod>> result = Lists.newArrayList();
     // Methods that belong to classes with a sequential=true or parallel=classes
     // attribute must all be run in the same worker
